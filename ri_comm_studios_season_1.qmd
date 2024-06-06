@@ -1,0 +1,159 @@
+---
+title: "RI Community Studios Impact Report"
+edition: "Season 1 (April to June 2024)"
+format:
+  PrettyPDF-typst:
+    typst-logo: 
+      path: "./communitystudioslogo.png"
+    mainfont: "Arial"
+    echo: false
+    warning: false
+    message: false
+    margin:
+      x: 1.5cm
+      y: 1.5cm
+  html: 
+    echo: false
+    warning: false
+    message: false
+params:
+  sheet: "https://docs.google.com/spreadsheets/d/1Ng1QYj58S-hp7pZHsmrz2a_8H6-jhOLm2AwqUPtlHes/edit?usp=sharing"
+editor: source
+---
+
+DaSL Community Studios are events designed to catalyze community and conversations around shared workflows and interests in biomedical data science topics.
+
+In Community Studios we hold closely the belief that we are all on the same team. Even though you may be the only computing or data science practitioner in your working group, we are committed to creating an environment where all feel welcome to share their experiences. This way, despite the challenges we face in our work, we can all learn from each other and improve our skills.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+library(googlesheets4)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(forcats)
+
+recode_likert <- function(raw_likert){
+
+  levs=c(`1`="Strongly Disagree", `2`="Disagree", `3`="Neutral", `4`="Agree", `5`="Strongly Agree")
+  
+responses_likert <- raw_likert |>
+  mutate(across(everything(), as.factor)) |>
+  mutate(id=row_number()) |>
+  tidyr::pivot_longer(cols=-id, names_to = "category", values_to = "likert") |>
+  mutate(likert=fct_recode(likert, "Strongly Disagree"="1", "Disagree"="2", "Neutral"="3", "Agree"="4", "Strongly Agree"="5")) |>
+  mutate(likert=ordered(likert)) |>
+  mutate(likert = fct_rev(likert)) |>
+  pivot_wider(id_cols = id, names_from=category, values_from = likert) |>
+  select(-id) |>
+  mutate(across(everything(), ~ factor(.x, levels = levs)))
+
+return(responses_likert)
+}
+```
+
+```{r}
+#| warning: false
+#| message: false
+
+survey_data <- read_sheet(params$sheet)
+
+```
+## Community Studios Format
+
+Community Studios is a bi-weekly meetup that covers a particular topic of interest. They differ from courses in that they focus on the **application** of computational knowledge in real-world settings by real-world people at Fred Hutch and beyond.
+
+Formats for community studios include discussion of topics, show and tell presentations, short format topics, and workshops. 
+
+We use Community Notes to capture discussions, questions, and share resources about topics. 
+
+## Topics Covered
+
+The following is a list of topics discussed during the first season of RI Community Studios. Links to the Session notes are provided. 
+
+| Date | Community Notes | Topics Discussed |
+| --- | --- | --- |
+| March 28, 2024 | [Session Notes](https://docs.google.com/document/d/1KzLZ9VCJW4ofaS-dXdKA8TR2ivAsVvHskJ-hQftLn-s/edit?usp=sharing) | Intro topics |
+| April 4, 2024 | [Session Notes](https://docs.google.com/document/d/1Gf5VQdvyanmLLXCUg7Z3yydsQ619uuLjs3V9vzbghA8/edit?usp=sharing) | PROOF / Intro to WILDS (Taylor Firman) |
+| April 18, 2024 | [Session Notes](https://docs.google.com/document/d/1xJWJV8wmO7qJd_PdAvdFWqh7cKRCyZ8IXriizV63WOQ/edit?usp=sharing)| Streamlit (Sam Minot) / 15 Tips for Success with HPC |
+| May 2, 2024 | [Session Notes](https://docs.google.com/document/d/1W5Cw3iXQED4kV9fZA6L7GQUnzJzdpCW5TnN1HTN69hM/edit?usp=sharing) | Nextflow for Model Building (Diya Sashidhar) / Software Environments for Research Computing |
+| May 16, 2024 | [Session Notes](https://docs.google.com/document/d/1kGbe0VAOAC4e2q7R85ZOO8je7VZIX7wPawvhPV76_Qo/edit?usp=sharing) | Research Data Management |
+| May 30, 2024 | [Session Notes](https://docs.google.com/document/d/1L84N6qyk6WL9oLCqQV2b7ZTgvEZLKG7xt8rz2XoEKRs/edit?usp=sharing) | Nextflow for Isoform ID of PacBio Reads (Logan Wallace)  |
+
+## Psychological Safety
+
+Almost all research informaticians and computational biologists have impostor syndrome. That's why having a forum where it's safe to ask questions is important.
+
+An atmosphere of psychological safety is the foundation of all Community Studios activities. We have [Participation Guidelines](https://hutchdatascience.org/communitystudios/guidelines) to make CommStudios welcoming and inclusive to all. This includes outlining both desired behaviors (be collaborative; be respectful) as well as behavior that is not tolerated (personal attacks, derogatory language).
+
+Overall, RI CommStudios rated quite high in psychological safety, with the majority of members strongly agreeing with the two psychological safety measures: being a place where they feel comfortable to raise problems and concerns, and ease of approaching other community studios members for help.
+
+```{r}
+#| echo: false
+responses_psych <- survey_data |> dplyr::select(contains("problems and concerns") | contains("easy to ask")) |> dplyr::rename(`I feel able\nto bring up problems\nand concerns`="On a scale of 1-5 (1-disagree, 5-agree), how much do you agree with the following statements:\n\nI feel able to bring up problems and concerns I have at community studios.")
+```
+
+```{r}
+#| echo: false
+responses_likert <- recode_likert(responses_psych)
+
+responses_likert <- as.data.frame(responses_likert)
+
+ggstats::gglikert(responses_likert, y_label_wrap = 20, labels_size = 1.5) + labs(title="CommStudios Psychological Safety is High") 
+```
+
+## Impact
+
+```{r}
+#| echo: false
+responses_impact <- survey_data |> select(contains("useful")|contains("helpful"))
+
+responses_likert <- recode_likert(responses_impact)
+
+responses_likert <- as.data.frame(responses_likert)
+
+ggstats::gglikert(responses_likert, y_label_wrap = 20, labels_size = 1.5) + labs(title="CommStudios Impact") #+ theme_barbie()
+```
+```{r}
+survey_data |> select(contains("recommended")) |>
+  rename(`recommended to colleague` = "Have you recommended community studios to a colleague in or outside your lab?") |>  ggplot(aes(x=`recommended to colleague`, fill=`recommended to colleague`)) + geom_bar() + ggtitle("Have you recommended community studios to a colleague?")
+```
+
+## Recommendations for Future Community Studios
+
+There is a desire for more interactive activities, such as workshops, by participants. 
+
+```{r}
+survey_data |> select(contains("future")) |>
+  filter(!is.na(`The following questions are optional.\n\nWhat would you like to see community studios offer in the future? \n\n(Examples include workshops, short talks, co-working sessions, or specific topics.)`)) |> gt::gt()
+```
+
+## Barriers
+
+Scheduling was the main barrier for those who could not attend. 
+
+```{r}
+survey_data |> select(contains("barrier")) |>
+  filter(!is.na(`If you didn't attend community studios, what was the barrier to attending?`)) |> gt::gt()
+
+```
+
+## Anything Else
+
+```{r}
+survey_data |> select(contains("else")) |>
+  filter(!is.na(`Is there anything else you'd like to tell us?`))|> gt::gt()
+
+```
+
+## Changes to Implement for Season 2
+
+Given the feedback, we will want to implement the following recommendations for Season 2. 
+
+- **Change branding to *Learning Community*.** - external feedback (not shown) from other community organizers suggests that *Community Studios* is less inclusive than *learning community* - we will shift the branding over. 
+- **Make Zoom Meeting a single recurring invite.** 
+- **More short form content.**
+- **Workshops (for example, working with containers).**
+- **Have subject specific Community Studios.** Genomics seems to be a popular topic, so we will explore bringing applications of this topic and others.

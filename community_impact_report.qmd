@@ -18,7 +18,7 @@ format:
     warning: false
     message: false
 params:
-  sheet: "https://docs.google.com/spreadsheets/d/1Ng1QYj58S-hp7pZHsmrz2a_8H6-jhOLm2AwqUPtlHes/edit?usp=sharing"
+  sheet: ""
 editor: source
 ---
 
